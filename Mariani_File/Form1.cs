@@ -33,14 +33,19 @@ namespace Mariani_File
 
         }
 
-        private void ScritturaFile(Prodotto prodotto)
+        public static void scritturaFileAppend(string content)
         {
-            using (StreamWriter writer = new StreamWriter(fileName, append: true))
-            {
-                writer.WriteLine(prodotto.nome + ";" + prodotto.prezzo + ";false") ;
-                writer.Close();
-            }
-            
+            var oStream = new FileStream(@"testo.csv", FileMode.Append, FileAccess.Write, FileShare.Read);
+            StreamWriter sw = new StreamWriter(oStream);
+            sw.WriteLine(content);
+            sw.Close();
+        }
+
+        public static string ToString(Prodotto prodotto, string sep = ";")
+        {
+
+            return (prodotto.nome + sep + prodotto.prezzo + sep).PadRight(20) + "##";
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -51,7 +56,7 @@ namespace Mariani_File
             {
                 prodotto.nome = textBox1.Text;
                 prodotto.prezzo = float.Parse(textBox2.Text);
-                ScritturaFile(prodotto);
+                scritturaFileAppend(ToString(prodotto));
                 textBox1.Clear();
                 textBox2.Clear();
                 textBox1.Focus();

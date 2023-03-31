@@ -22,6 +22,7 @@ namespace Mariani_File
         public string fileName = @"testo.csv";
         public Prodotto prodotto;
         public int dim;
+        public int recordLenght = 24;
 
         public Form1()
         {
@@ -67,22 +68,22 @@ namespace Mariani_File
         {
             listView1.Clear();
             AperturaFile();
+            listView1.Show();
         }
 
         private void AperturaFile()
         {
-            using (StreamReader sr = File.OpenText(fileName))
+            String line;
+            byte[] br;
+            var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+            f.Seek(0, SeekOrigin.Begin);
+            while (f.Position < f.Length)
             {
-                string s = "";
-                while ((s = sr.ReadLine()) != null)
-                {
-                    string[] splittaggio = s.Split(';');
-                    if (splittaggio[2] == "false")
-                    {
-                        listView1.Items.Add("Nome: " + splittaggio[0] + " Prezzo: " + splittaggio[1]);
-                    }
-                }
-                sr.Close();
+                br = reader.ReadBytes(recordLenght);
+                //converte in stringa
+                line = Encoding.ASCII.GetString(br, 0, br.Length);
+                listView1.Items.Add(line);
             }
         }
 

@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO;
 
 namespace Mariani_File
 {
@@ -22,8 +22,7 @@ namespace Mariani_File
         public string fileName = @"testo.csv";
         public Prodotto prodotto;
         public int dim;
-        public int recordLenght = 24;
-
+        public int recordLenght = 22;
         public Form1()
         {
             InitializeComponent();
@@ -40,12 +39,6 @@ namespace Mariani_File
             StreamWriter sw = new StreamWriter(oStream);
             sw.WriteLine(content);
             sw.Close();
-        }
-
-        public static string ToString(Prodotto prodotto, string sep = ";")
-        {
-
-            return (prodotto.nome + sep + prodotto.prezzo + sep).PadRight(20) + "##";
 
         }
 
@@ -68,7 +61,11 @@ namespace Mariani_File
         {
             listView1.Clear();
             AperturaFile();
-            listView1.Show();
+        }
+        public static string ToString(Prodotto prodotto, string sep = ";")
+        {
+            return (prodotto.nome + sep + prodotto.prezzo + sep + "false").PadRight(18)+"##";
+
         }
 
         private void AperturaFile()
@@ -83,8 +80,17 @@ namespace Mariani_File
                 br = reader.ReadBytes(recordLenght);
                 //converte in stringa
                 line = Encoding.ASCII.GetString(br, 0, br.Length);
-                listView1.Items.Add(line);
+                //controllo logico
+                string[] split = line.Split(';');
+                string[] split2 = split[2].Split(' ');
+                if (split2[0] == "false")
+                {
+                    listView1.Items.Add(line);
+                }
             }
+            
+            reader.Close();
+            f.Close();
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -99,35 +105,27 @@ namespace Mariani_File
 
         private void Cancellazione(string oggetto)
         {
-            string s = "";
-            using (StreamReader reader = File.OpenText(fileName))
-            {
-                using (StreamWriter writer = new StreamWriter(@"appoggio.csv", append: true))
-                {
-                    while ((s = reader.ReadLine()) != null)
-                    {
-                        string[] splittaggio1 = s.Split(';');
-
-                        if (splittaggio1[0] == oggetto)
-                        {
-                        splittaggio1[2] = "true";
-                        }
-                    
-                        if (splittaggio1[2] == "false")
-                        {
-                            writer.WriteLine(s);
-                        }
-                        else
-                        {
-                            writer.WriteLine(splittaggio1[0] + ";" + splittaggio1[1] + ";" + splittaggio1[2]);
-                        }
-                        
-                    }
-                }
-                reader.Close();
-            }
-            File.Delete(@"testo.csv");
-            File.Move(@"appoggio.csv", @"testo.csv");
+            byte[] br;
+            String line;
+            int numLinea = Ricerca(oggetto);
+            listView1.Items.Add(numLinea.ToString());
+            var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+            f.Seek(0, SeekOrigin.Begin);
+            
+            f.Seek((recordLenght*numLinea), SeekOrigin.Current);
+            br = reader.ReadBytes(recordLenght);
+            line = Encoding.ASCII.GetString(br, 0, br.Length);
+            listView1.Items.Add(br.Length.ToString());
+            listView1.Items.Add((line));
+            string[] split = line.Split(';');
+            string[] split1 = split[1].Split(' ');
+            f.Seek(-recordLenght, SeekOrigin.Current);
+            line = (split[0] + ";" + split[1] + ";" + "true").PadRight(18) + "##";
+            br = Encoding.ASCII.GetBytes(line);
+            reader.BaseStream.Write(br, 0, br.Length);
+            reader.Close();
+            f.Close();
             listView1.Clear();
             AperturaFile();
         }
@@ -149,6 +147,7 @@ namespace Mariani_File
         private void Modifica(string parola, string oggetto)
         {
             string s = "";
+
             using (StreamReader reader = File.OpenText(fileName))
             {
                 using (StreamWriter writer = new StreamWriter(@"appoggio.csv", append: true))
@@ -157,7 +156,7 @@ namespace Mariani_File
                     {
                         string[] splittaggio1 = s.Split(';');
                         string[] splittaggio2 = splittaggio1[1].Split(';');
-                    
+
                         if (parola == splittaggio1[0])
                         {
                             writer.WriteLine(oggetto + ";" + splittaggio1[1] + ";" + splittaggio1[2]);
@@ -166,7 +165,7 @@ namespace Mariani_File
                         {
                             writer.WriteLine(s);
                         }
-                        
+
                     }
                 }
                 reader.Close();
@@ -186,6 +185,29 @@ namespace Mariani_File
         private void button6_Click(object sender, EventArgs e)
         {
             groupBox1.Show();
+        }
+
+        private int Ricerca(string parola)
+        {
+            string s = "";
+            int i = 0;
+
+            using (StreamReader reader = File.OpenText(fileName))
+            {
+                while ((s = reader.ReadLine()) != null)
+                {
+                    
+                    string[] split = s.Split(';');
+                    if (parola == split[0])
+                    {
+                        reader.Close();
+                        return i;
+                    }
+                    i++;
+                }
+                reader.Close();
+                return -1;
+            }
         }
     }
 }

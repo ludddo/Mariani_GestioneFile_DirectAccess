@@ -22,7 +22,7 @@ namespace Mariani_File
         public string fileName = @"testo.csv";
         public Prodotto prodotto;
         public int dim;
-        public int recordLenght = 22;
+        public int recordLenght = 32;
         public Form1()
         {
             InitializeComponent();
@@ -64,7 +64,7 @@ namespace Mariani_File
         }
         public static string ToString(Prodotto prodotto, string sep = ";")
         {
-            return (prodotto.nome + sep + prodotto.prezzo + sep + "false").PadRight(18)+"##";
+            return (prodotto.nome + sep + prodotto.prezzo + sep + "false").PadRight(28)+"##";
 
         }
 
@@ -80,6 +80,7 @@ namespace Mariani_File
                 br = reader.ReadBytes(recordLenght);
                 //converte in stringa
                 line = Encoding.ASCII.GetString(br, 0, br.Length);
+                //listView1.Items.Add(line);
                 //controllo logico
                 string[] split = line.Split(';');
                 string[] split2 = split[2].Split(' ');
@@ -121,7 +122,7 @@ namespace Mariani_File
             string[] split = line.Split(';');
             string[] split1 = split[1].Split(' ');
             f.Seek(-recordLenght, SeekOrigin.Current);
-            line = (split[0] + ";" + split[1] + ";" + "true").PadRight(18) + "##";
+            line = (split[0] + ";" + split[1] + ";" + "true").PadRight(28) + "##";
             br = Encoding.ASCII.GetBytes(line);
             reader.BaseStream.Write(br, 0, br.Length);
             reader.Close();
@@ -146,35 +147,30 @@ namespace Mariani_File
 
         private void Modifica(string parola, string oggetto)
         {
-            string s = "";
+            byte[] br;
+            String line;
+            int numLinea = Ricerca(parola);
+            listView1.Items.Add(numLinea.ToString());
+            var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+            f.Seek(0, SeekOrigin.Begin);
 
-            using (StreamReader reader = File.OpenText(fileName))
-            {
-                using (StreamWriter writer = new StreamWriter(@"appoggio.csv", append: true))
-                {
-                    while ((s = reader.ReadLine()) != null)
-                    {
-                        string[] splittaggio1 = s.Split(';');
-                        string[] splittaggio2 = splittaggio1[1].Split(';');
-
-                        if (parola == splittaggio1[0])
-                        {
-                            writer.WriteLine(oggetto + ";" + splittaggio1[1] + ";" + splittaggio1[2]);
-                        }
-                        else
-                        {
-                            writer.WriteLine(s);
-                        }
-
-                    }
-                }
-                reader.Close();
-            }
-            File.Delete(@"testo.csv");
-            File.Move(@"appoggio.csv", @"testo.csv");
+            f.Seek((recordLenght * numLinea), SeekOrigin.Current);
+            br = reader.ReadBytes(recordLenght);
+            line = Encoding.ASCII.GetString(br, 0, br.Length);
+            listView1.Items.Add(br.Length.ToString());
+            listView1.Items.Add((line));
+            string[] split = line.Split(';');
+            string[] split1 = split[2].Split(' ');
+            split[0] = oggetto;
+            f.Seek(-recordLenght, SeekOrigin.Current);
+            line = (oggetto + ";" + split[1] + ";" + split1[0]).PadRight(28) + "##";
+            br = Encoding.ASCII.GetBytes(line);
+            reader.BaseStream.Write(br, 0, br.Length);
+            reader.Close();
+            f.Close();
             listView1.Clear();
             AperturaFile();
-            groupBox1.Hide();
         }
 
         private void groupBox1_Enter(object sender, EventArgs e)

@@ -22,7 +22,7 @@ namespace Mariani_File
         public string fileName = @"testo.csv";
         public Prodotto prodotto;
         public int dim;
-        public int recordLenght = 32;
+        public int recordLenght = 60;
         public Form1()
         {
             InitializeComponent();
@@ -44,16 +44,43 @@ namespace Mariani_File
 
         private void button1_Click(object sender, EventArgs e)
         {
+            bool buonFine = true;
             bool asd = String.IsNullOrEmpty(textBox1.Text);
             bool asd1 = String.IsNullOrEmpty(textBox2.Text);
             if (asd != true && asd1 != true)
             {
-                prodotto.nome = textBox1.Text;
-                prodotto.prezzo = float.Parse(textBox2.Text);
+                if (textBox1.Text.Length < 20)
+                {
+                    prodotto.nome = textBox1.Text;
+                }
+                else
+                {
+                    MessageBox.Show("Il nome del prodotto é troppo lungo");
+                }
+                if (textBox2.Text.Length < 20)
+                {
+
+                    buonFine = float.TryParse(textBox2.Text, out float prezzo);
+                    prodotto.prezzo = prezzo;
+                }
+                else
+                {
+                    MessageBox.Show("Il nome del prodotto é troppo lungo");
+                }
+                
+                if (buonFine != true)
+                {
+                    MessageBox.Show("Formato non Valido!!!");
+                }
+                
                 scritturaFileAppend(ToString(prodotto));
                 textBox1.Clear();
                 textBox2.Clear();
                 textBox1.Focus();
+            }
+            else
+            {
+                MessageBox.Show("Inserisci qualcosa nei campi Nome/Prezzo");
             }
         }
 
@@ -64,7 +91,7 @@ namespace Mariani_File
         }
         public static string ToString(Prodotto prodotto, string sep = ";")
         {
-            return (prodotto.nome + sep + prodotto.prezzo + sep + "false").PadRight(28)+"##";
+            return (prodotto.nome + sep + prodotto.prezzo + sep + "false").PadRight(58);
 
         }
 
@@ -108,25 +135,36 @@ namespace Mariani_File
         {
             byte[] br;
             String line;
+            
             int numLinea = Ricerca(oggetto);
-            listView1.Items.Add(numLinea.ToString());
             var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
             BinaryReader reader = new BinaryReader(f);
-            f.Seek(0, SeekOrigin.Begin);
+            if (numLinea != -1)
+            {
+                
+                f.Seek(0, SeekOrigin.Begin);
+
+                f.Seek((recordLenght * numLinea), SeekOrigin.Current);
+                br = reader.ReadBytes(recordLenght);
+                line = Encoding.ASCII.GetString(br, 0, br.Length);
+                listView1.Items.Add(br.Length.ToString());
+                listView1.Items.Add((line));
+                string[] split = line.Split(';');
+                string[] split1 = split[1].Split(' ');
+                f.Seek(-recordLenght, SeekOrigin.Current);
+                line = (split[0] + ";" + split[1] + ";" + "true").PadRight(58);
+                br = Encoding.ASCII.GetBytes(line);
+                reader.BaseStream.Write(br, 0, br.Length);
+                reader.Close();
+                f.Close();
+            }
+            else
+            {
+                reader.Close();
+                f.Close();
+                MessageBox.Show("il prodotto che si vuole rimuovere non esiste");
+            }
             
-            f.Seek((recordLenght*numLinea), SeekOrigin.Current);
-            br = reader.ReadBytes(recordLenght);
-            line = Encoding.ASCII.GetString(br, 0, br.Length);
-            listView1.Items.Add(br.Length.ToString());
-            listView1.Items.Add((line));
-            string[] split = line.Split(';');
-            string[] split1 = split[1].Split(' ');
-            f.Seek(-recordLenght, SeekOrigin.Current);
-            line = (split[0] + ";" + split[1] + ";" + "true").PadRight(28) + "##";
-            br = Encoding.ASCII.GetBytes(line);
-            reader.BaseStream.Write(br, 0, br.Length);
-            reader.Close();
-            f.Close();
             listView1.Clear();
             AperturaFile();
         }
@@ -141,8 +179,14 @@ namespace Mariani_File
         {
             string parola = textBox4.Text;
             string modificato = textBox5.Text;
-
-            Modifica(parola.ToString(), modificato.ToString());
+            if (parola.Length < 20 && modificato.Length < 20)
+            {
+                Modifica(parola.ToString(), modificato.ToString());
+            }
+            else
+            {
+                MessageBox.Show("Il nome del prodotto é troppo lungo");
+            }       
         }
 
         private void Modifica(string parola, string oggetto)
@@ -150,27 +194,37 @@ namespace Mariani_File
             byte[] br;
             String line;
             int numLinea = Ricerca(parola);
-            listView1.Items.Add(numLinea.ToString());
             var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
             BinaryReader reader = new BinaryReader(f);
-            f.Seek(0, SeekOrigin.Begin);
 
-            f.Seek((recordLenght * numLinea), SeekOrigin.Current);
-            br = reader.ReadBytes(recordLenght);
-            line = Encoding.ASCII.GetString(br, 0, br.Length);
-            listView1.Items.Add(br.Length.ToString());
-            listView1.Items.Add((line));
-            string[] split = line.Split(';');
-            string[] split1 = split[2].Split(' ');
-            split[0] = oggetto;
-            f.Seek(-recordLenght, SeekOrigin.Current);
-            line = (oggetto + ";" + split[1] + ";" + split1[0]).PadRight(28) + "##";
-            br = Encoding.ASCII.GetBytes(line);
-            reader.BaseStream.Write(br, 0, br.Length);
-            reader.Close();
-            f.Close();
-            listView1.Clear();
-            AperturaFile();
+            if (numLinea != -1)
+            {
+                
+                f.Seek(0, SeekOrigin.Begin);
+
+                f.Seek((recordLenght * numLinea), SeekOrigin.Current);
+                br = reader.ReadBytes(recordLenght);
+                line = Encoding.ASCII.GetString(br, 0, br.Length);
+                listView1.Items.Add(br.Length.ToString());
+                listView1.Items.Add((line));
+                string[] split = line.Split(';');
+                string[] split1 = split[2].Split(' ');
+                split[0] = oggetto;
+                f.Seek(-recordLenght, SeekOrigin.Current);
+                line = (oggetto + ";" + split[1] + ";" + split1[0]).PadRight(58);
+                br = Encoding.ASCII.GetBytes(line);
+                reader.BaseStream.Write(br, 0, br.Length);
+                reader.Close();
+                f.Close();
+                listView1.Clear();
+                AperturaFile();
+            }
+            else
+            {
+                reader.Close();
+                f.Close();
+                MessageBox.Show("il prodotto che si vuole modificare non esiste");
+            }
         }
 
         private void groupBox1_Enter(object sender, EventArgs e)
@@ -183,7 +237,7 @@ namespace Mariani_File
             groupBox1.Show();
         }
 
-        private int Ricerca(string parola)
+        private int RicercaEliminato(string parola)
         {
             string s = "";
             int i = 0;
@@ -212,6 +266,30 @@ namespace Mariani_File
             }
         }
 
+        private int Ricerca(string parola)
+        {
+            string s = "";
+            int i = 0;
+
+            using (StreamReader reader = File.OpenText(fileName))
+            {
+                while ((s = reader.ReadLine()) != null)
+                {
+
+                    string[] split = s.Split(';');
+                    
+                    if (parola == split[0])
+                    {
+                        reader.Close();
+                        return i;
+                    }
+                    i++;
+                }
+                reader.Close();
+                return -1;
+            }
+        }
+
         private void button7_Click(object sender, EventArgs e)
         {
             Recupero();
@@ -221,27 +299,35 @@ namespace Mariani_File
         {
             byte[] br;
             String line;
-            int numLinea = Ricerca("true");
-            listView1.Items.Add(numLinea.ToString());
-            var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
-            BinaryReader reader = new BinaryReader(f);
-            f.Seek(0, SeekOrigin.Begin);
+            int numLinea = RicercaEliminato("true");
+            if (numLinea != -1)
+            {
+                listView1.Items.Add(numLinea.ToString());
+                var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+                BinaryReader reader = new BinaryReader(f);
+                f.Seek(0, SeekOrigin.Begin);
 
-            f.Seek((recordLenght * numLinea), SeekOrigin.Current);
-            br = reader.ReadBytes(recordLenght);
-            line = Encoding.ASCII.GetString(br, 0, br.Length);
-            listView1.Items.Add(br.Length.ToString());
-            listView1.Items.Add((line));
-            string[] split = line.Split(';');
-            string[] split1 = split[1].Split(' ');
-            f.Seek(-recordLenght, SeekOrigin.Current);
-            line = (split[0] + ";" + split[1] + ";" + "false").PadRight(28) + "##";
-            br = Encoding.ASCII.GetBytes(line);
-            reader.BaseStream.Write(br, 0, br.Length);
-            reader.Close();
-            f.Close();
-            listView1.Clear();
-            AperturaFile();
+                f.Seek((recordLenght * numLinea), SeekOrigin.Current);
+                br = reader.ReadBytes(recordLenght);
+                line = Encoding.ASCII.GetString(br, 0, br.Length);
+                listView1.Items.Add(br.Length.ToString());
+                listView1.Items.Add((line));
+                string[] split = line.Split(';');
+                string[] split1 = split[1].Split(' ');
+                f.Seek(-recordLenght, SeekOrigin.Current);
+                line = (split[0] + ";" + split[1] + ";" + "false").PadRight(58);
+                br = Encoding.ASCII.GetBytes(line);
+                reader.BaseStream.Write(br, 0, br.Length);
+                reader.Close();
+                f.Close();
+                listView1.Clear();
+                AperturaFile();
+            }
+            else
+            {
+                MessageBox.Show("Non c'é nulla da Recuperare");
+            }
+            
         }
 
         private void button8_Click(object sender, EventArgs e)
@@ -260,8 +346,9 @@ namespace Mariani_File
                     while ((s = reader.ReadLine()) != null)
                     {
                         string[] split = s.Split(';');
+                        string[] split1 = split[2].Split(' ');
 
-                        if (split[2] != "true")
+                        if (split1[0] != "true")
                         {
                             writer.WriteLine(s);
                         }

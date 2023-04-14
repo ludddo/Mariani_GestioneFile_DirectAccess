@@ -194,6 +194,12 @@ namespace Mariani_File
                 {
                     
                     string[] split = s.Split(';');
+                    string[] split1 = split[2].Split(' ');
+                    if (split1[0] == "true")
+                    {
+                        reader.Close();
+                        return i;
+                    }
                     if (parola == split[0])
                     {
                         reader.Close();
@@ -204,6 +210,70 @@ namespace Mariani_File
                 reader.Close();
                 return -1;
             }
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            Recupero();
+        }
+
+        private void Recupero()
+        {
+            byte[] br;
+            String line;
+            int numLinea = Ricerca("true");
+            listView1.Items.Add(numLinea.ToString());
+            var f = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite);
+            BinaryReader reader = new BinaryReader(f);
+            f.Seek(0, SeekOrigin.Begin);
+
+            f.Seek((recordLenght * numLinea), SeekOrigin.Current);
+            br = reader.ReadBytes(recordLenght);
+            line = Encoding.ASCII.GetString(br, 0, br.Length);
+            listView1.Items.Add(br.Length.ToString());
+            listView1.Items.Add((line));
+            string[] split = line.Split(';');
+            string[] split1 = split[1].Split(' ');
+            f.Seek(-recordLenght, SeekOrigin.Current);
+            line = (split[0] + ";" + split[1] + ";" + "false").PadRight(28) + "##";
+            br = Encoding.ASCII.GetBytes(line);
+            reader.BaseStream.Write(br, 0, br.Length);
+            reader.Close();
+            f.Close();
+            listView1.Clear();
+            AperturaFile();
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            Ricompatta();
+        }
+
+        private void Ricompatta()
+        {
+            string s = "";
+
+            using (StreamReader reader = File.OpenText(fileName))
+            {
+                using (StreamWriter writer = new StreamWriter(@"appoggio.csv", append: true))
+                {
+                    while ((s = reader.ReadLine()) != null)
+                    {
+                        string[] split = s.Split(';');
+
+                        if (split[2] != "true")
+                        {
+                            writer.WriteLine(s);
+                        }
+                    }
+                }
+                reader.Close();
+            }
+            File.Delete(@"testo.csv");
+            File.Move(@"appoggio.csv", @"testo.csv");
+            listView1.Clear();
+            AperturaFile();
+            groupBox1.Hide();
         }
     }
 }
